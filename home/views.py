@@ -11,6 +11,7 @@ from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication   
+from django.core.paginator import Paginator
 class LoginAPI(APIView):
     def post(self, request):
         data = request.data
@@ -139,7 +140,13 @@ class PeopleAPI(APIView):
     authentication_classes = [TokenAuthentication]
     def get(self, request):
         print(request.user)
-        return Response({"message": "GET request"})
+        dbData = Person.objects.filter(color__isnull=False)
+        page = request.GET.get("page", 1)
+        page_size = 2
+        paginator = Paginator(dbData, page_size)
+        # Serialize multiple objects by setting many=True
+        serializer = PeopleSerializer(paginator.page(page), many=True)
+        return Response(serializer.data)  # Return serialized data
 
     def post(self, request):
         return Response({"message": "POST request"})

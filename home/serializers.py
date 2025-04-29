@@ -67,6 +67,11 @@ class PeopleSerializer(serializers.ModelSerializer):
         if data.get("age") and data["age"] < 18:
             raise serializers.ValidationError(
                 "Age cannot be less than 18 in object level validation")
+        # check if already exists   
+        if data.get("name") and Person.objects.filter(name=data["name"]).exists():
+            raise serializers.ValidationError("Name already exists")
+        if data.get("email") and Person.objects.filter(email=data["email"]).exists():
+            raise serializers.ValidationError("Email already exists")
         return data
     # field specific validation (this will override the object level validation)
 
