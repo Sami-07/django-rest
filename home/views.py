@@ -4,7 +4,7 @@ from rest_framework.response import Response
 
 
 
-@api_view(["GET"])
+@api_view(["GET", "POST", "PUT", "PATCH", "DELETE"])
 def index(request):
     dict = {
         "name": "Sami",
@@ -12,4 +12,13 @@ def index(request):
         "company": "WiseIN",
         "skills": ["TypeScript", "Next.js"]
     }
-    return Response(dict)
+    if(request.method == "GET"):
+        print("GET request")
+        return Response(dict)
+    elif(request.method == "POST"):
+        print("POST request")
+        return Response(dict)
+    elif(request.method == "PUT"):
+        print("PUT request")
+        return Response(dict)
+
