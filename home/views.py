@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import Person
-from .serializers import PeopleSerializer
+from .serializers import PeopleSerializer, LoginSerializer
 
 
 @api_view(["GET", "POST", "PUT", "PATCH", "DELETE"])
@@ -13,7 +13,10 @@ def index(request):
     POST: Returns the received data back to the client
     PUT: Returns a sample dictionary (currently same as GET response)
     """
- 
+    dict = {
+        "name": "Sami",
+        "age": 20
+    }
     if (request.method == "GET"):
         print("GET request")
         return Response(dict)  # Return the sample dictionary for GET requests
@@ -30,18 +33,19 @@ def index(request):
 def people(request):
     """
     CRUD operations for Person model.
-    
+
     GET: Retrieves all people from the database and returns serialized data
     POST: Creates a new person record from the provided data
     PUT: Updates an existing person record completely (requires all fields)
     PATCH: Partially updates an existing person record (only specified fields)
-    
+
     Returns:
         - GET: List of all people
         - POST/PUT/PATCH: Created/Updated person data or validation errors
     """
     if (request.method == "GET"):
-        dbData = Person.objects.all()  # Query to fetch all people from Database
+        # dbData = Person.objects.all()  # Query to fetch all people from Database
+        dbData = Person.objects.filter(color__isnull=False) # Query to fetch all people from Database who have a color
         # Serialize multiple objects by setting many=True
         serializer = PeopleSerializer(dbData, many=True)
         return Response(serializer.data)  # Return serialized data
@@ -80,8 +84,8 @@ def people(request):
             serializer.save()  # Save the updated data
             return Response(serializer.data)  # Return the updated object
         return Response(serializer.errors)  # Return validation errors if any
-    
-    elif(request.method == "DELETE"):
+
+    elif (request.method == "DELETE"):
         id = request.query_params.get("id")
         dbObj = Person.objects.get(id=id)
         if not dbObj:
@@ -89,3 +93,12 @@ def people(request):
         dbObj.delete()
         return Response("Deleted")
 
+
+@api_view(["POST"])
+def login(request):
+    data = request.data
+    serializer = LoginSerializer(data=data)
+    if serializer.is_valid():
+        print(serializer.validated_data)
+        return Response(serializer.data)
+    return Response(serializer.errors)
