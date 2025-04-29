@@ -26,7 +26,7 @@ def index(request):
         return Response(dict)  # Return the sample dictionary for PUT requests
 
 
-@api_view(["GET", "POST", "PUT", "PATCH"])
+@api_view(["GET", "POST", "PUT", "PATCH", "DELETE"])
 def people(request):
     """
     CRUD operations for Person model.
@@ -80,3 +80,12 @@ def people(request):
             serializer.save()  # Save the updated data
             return Response(serializer.data)  # Return the updated object
         return Response(serializer.errors)  # Return validation errors if any
+    
+    elif(request.method == "DELETE"):
+        id = request.query_params.get("id")
+        dbObj = Person.objects.get(id=id)
+        if not dbObj:
+            return Response("Not found")
+        dbObj.delete()
+        return Response("Deleted")
+
