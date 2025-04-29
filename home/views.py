@@ -12,6 +12,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication   
 from django.core.paginator import Paginator
+from rest_framework.decorators import action
 class LoginAPI(APIView):
     def post(self, request):
         data = request.data
@@ -165,7 +166,8 @@ class PeopleAPI(APIView):
 class PeopleViewSet(viewsets.ModelViewSet):
     serializer_class = PeopleSerializer
     queryset = Person.objects.all()
-
+    # allows only GET and POST requests to be used for this view set and not PUT, PATCH, DELETE
+    http_method_names = ["get", "post"]
     def list(self, request):
         user_query = request.query_params.get("name")
         queryset = self.queryset
@@ -173,3 +175,14 @@ class PeopleViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(name__startswith=user_query)
         serializer = PeopleSerializer(queryset, many=True)
         return Response(serializer.data)
+
+    # custom action to send email to the user
+    # actions are used to add custom endpoints to the model view set without having to create a new endpoint
+    # This ensures that all the funtionality is encapsulated within the model view set
+    @action(detail=True, methods=["POST"])
+    def send_email(self, request, pk=None):
+        person = Person.objects.get(pk=pk)
+        serializer = PeopleSerializer(person)
+
+        return Response({"message": "Email sent", "user_data": serializer.data})
+
