@@ -3,7 +3,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import Person
 from .serializers import PeopleSerializer, LoginSerializer
-
+from rest_framework.views import APIView
 
 @api_view(["GET", "POST", "PUT", "PATCH", "DELETE"])
 def index(request):
@@ -102,3 +102,16 @@ def login(request):
         print(serializer.validated_data)
         return Response(serializer.data)
     return Response(serializer.errors)
+
+
+class PeopleAPI(APIView):
+    def get(self, request):
+        return Response({"message": "GET request"})
+    def post(self, request):
+        return Response({"message": "POST request"})
+    def patch(self, request):
+        return Response({"message": "PATCH request"})
+    def put(self, request):
+        return Response({"message": "PUT request"})
+    def delete(self, request):
+        return Response({"message": "DELETE request"})

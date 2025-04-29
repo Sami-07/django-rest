@@ -36,14 +36,14 @@ class PeopleSerializer(serializers.ModelSerializer):
     
     # object level validation
     def validate(self, data):
-        if data["age"] < 18:
+        if data.get("age") and data["age"] < 18:
             raise serializers.ValidationError(
                 "Age cannot be less than 18 in object level validation")
         return data
     # field specific validation (this will override the object level validation)
 
     def validate_age(self, value):
-        if value < 18:
+        if value and value < 18:
             raise serializers.ValidationError(
                 "Age cannot be less than 18 in field level validation")
         return value
