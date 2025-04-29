@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from .models import Person
 from .serializers import PeopleSerializer, LoginSerializer
 from rest_framework.views import APIView
-
+from rest_framework import viewsets
 @api_view(["GET", "POST", "PUT", "PATCH", "DELETE"])
 def index(request):
     """
@@ -104,6 +104,7 @@ def login(request):
     return Response(serializer.errors)
 
 
+# These 4 are the same as the people function in the index view which handles GET, POST, PUT, PATCH, DELETE requests manually
 class PeopleAPI(APIView):
     def get(self, request):
         return Response({"message": "GET request"})
@@ -115,3 +116,19 @@ class PeopleAPI(APIView):
         return Response({"message": "PUT request"})
     def delete(self, request):
         return Response({"message": "DELETE request"})
+
+
+
+## These 3 are the same as the people function in the index view which handles GET, POST, PUT, PATCH, DELETE requests automatically
+class PeopleViewSet(viewsets.ModelViewSet):
+    serializer_class = PeopleSerializer
+    queryset = Person.objects.all()
+
+    def list(self, request):
+        user_query = request.query_params.get("name")
+        queryset = self.queryset
+        if user_query:
+            queryset = queryset.filter(name__startswith=user_query)
+        serializer = PeopleSerializer(queryset, many=True)
+        return Response(serializer.data)
+

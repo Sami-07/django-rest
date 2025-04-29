@@ -17,7 +17,8 @@ class ColorSerializer(serializers.ModelSerializer):
 class PeopleSerializer(serializers.ModelSerializer):
     # instead of using depth, we can use a serializer for the related model to include  only the required related model data in the response (color).
     # example: get only the color name in the response
-    color = ColorSerializer() # serializing foreign table data
+    color = ColorSerializer(read_only=True)  # for reading nested data
+    color_id = serializers.PrimaryKeyRelatedField(queryset=Color.objects.all(), source='color', write_only=True)  # for writing with ID
     color_info = serializers.SerializerMethodField()
     class Meta:
         model = Person
