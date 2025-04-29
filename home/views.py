@@ -2,9 +2,37 @@ from django.shortcuts import render
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import Person
-from .serializers import PeopleSerializer, LoginSerializer
+from .serializers import PeopleSerializer, LoginSerializer, RegisterSerializer
 from rest_framework.views import APIView
 from rest_framework import viewsets
+from django.contrib.auth.models import User
+from rest_framework import status
+from django.contrib.auth import authenticate
+from rest_framework.authtoken.models import Token
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.authentication import TokenAuthentication   
+class LoginAPI(APIView):
+    def post(self, request):
+        data = request.data
+        serializer = LoginSerializer(data = data)
+        if(not serializer.is_valid()):
+             return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        user = authenticate(username = data["username"], password = data["password"])
+        if not user:
+            return Response({"error" : "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        token, _ = Token.objects.get_or_create(user = user)
+        return Response({"token": str(token)}, status=status.HTTP_200_OK)
+        
+class RegisterAPI(APIView):
+    def post(self, request):
+        data = request.data
+        serializer = RegisterSerializer(data=data)
+        if (not serializer.is_valid()):
+            return Response({"error": serializer.errors,  "user_created": False}, status=status.HTTP_400_BAD_REQUEST)
+        serializer.save()
+        return Response({"data": serializer.data, "user_created": True}, status=status.HTTP_201_CREATED)
+
+
 @api_view(["GET", "POST", "PUT", "PATCH", "DELETE"])
 def index(request):
     """
@@ -45,7 +73,8 @@ def people(request):
     """
     if (request.method == "GET"):
         # dbData = Person.objects.all()  # Query to fetch all people from Database
-        dbData = Person.objects.filter(color__isnull=False) # Query to fetch all people from Database who have a color
+        # Query to fetch all people from Database who have a color
+        dbData = Person.objects.filter(color__isnull=False)
         # Serialize multiple objects by setting many=True
         serializer = PeopleSerializer(dbData, many=True)
         return Response(serializer.data)  # Return serialized data
@@ -106,20 +135,26 @@ def login(request):
 
 # These 4 are the same as the people function in the index view which handles GET, POST, PUT, PATCH, DELETE requests manually
 class PeopleAPI(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
     def get(self, request):
+        print(request.user)
         return Response({"message": "GET request"})
+
     def post(self, request):
         return Response({"message": "POST request"})
+
     def patch(self, request):
         return Response({"message": "PATCH request"})
+
     def put(self, request):
         return Response({"message": "PUT request"})
+
     def delete(self, request):
         return Response({"message": "DELETE request"})
 
 
-
-## These 3 are the same as the people function in the index view which handles GET, POST, PUT, PATCH, DELETE requests automatically
+# These 3 are the same as the people function in the index view which handles GET, POST, PUT, PATCH, DELETE requests automatically
 class PeopleViewSet(viewsets.ModelViewSet):
     serializer_class = PeopleSerializer
     queryset = Person.objects.all()
@@ -131,4 +166,3 @@ class PeopleViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(name__startswith=user_query)
         serializer = PeopleSerializer(queryset, many=True)
         return Response(serializer.data)
-

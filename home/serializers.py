@@ -1,12 +1,37 @@
 from rest_framework import serializers
 from .models import Person, Color
+from django.contrib.auth.models import User
 
 
-# we use serializer.Serializer to create a serializer for a custom request (login) where we don't have a model
-# we can use serializer.ModelSerializer to create a serializer for a model when we have a model
 class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField()
+class RegisterSerializer(serializers.Serializer):
+    username = serializers.CharField()
     email = serializers.EmailField()
     password = serializers.CharField()
+
+    def validate(self, data):
+        if (data["username"]):
+            if (User.objects.filter(username=data["username"]).exists()):
+                raise serializers.ValidationError("username is already taken")
+        if (data["email"]):
+            if (User.objects.filter(email=data["email"]).exists()):
+                raise serializers.ValidationError("email is already taken")
+        return data 
+    
+    def create(self, validated_data):
+        print(validated_data)
+        user = User.objects.create(username = validated_data["username"], email = validated_data["email"])
+        user.set_password(validated_data["password"])
+        user.save()
+        return validated_data
+# we use serializer.Serializer to create a serializer for a custom request (login) where we don't have a model
+# we can use serializer.ModelSerializer to create a serializer for a model when we have a model
+
+
+
+
 
 class ColorSerializer(serializers.ModelSerializer):
     class Meta:
@@ -18,8 +43,10 @@ class PeopleSerializer(serializers.ModelSerializer):
     # instead of using depth, we can use a serializer for the related model to include  only the required related model data in the response (color).
     # example: get only the color name in the response
     color = ColorSerializer(read_only=True)  # for reading nested data
-    color_id = serializers.PrimaryKeyRelatedField(queryset=Color.objects.all(), source='color', write_only=True)  # for writing with ID
+    color_id = serializers.PrimaryKeyRelatedField(queryset=Color.objects.all(
+    ), source='color', write_only=True)  # for writing with ID
     color_info = serializers.SerializerMethodField()
+
     class Meta:
         model = Person
         # fields = ["name", "age"]
@@ -34,7 +61,7 @@ class PeopleSerializer(serializers.ModelSerializer):
             "color_name": color_obj.color_name,
             "hex_code": "#24dcdb"
         }
-    
+
     # object level validation
     def validate(self, data):
         if data.get("age") and data["age"] < 18:
